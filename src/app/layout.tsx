@@ -1,28 +1,50 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Source_Code_Pro } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
-import { Separator } from "@/components/ui/separator";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const sourceCodePro = Source_Code_Pro({
+  variable: "--font-source-code-pro",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "ScrapeSuite - Proxy Manager Dashboard",
-  description: "Professional proxy management dashboard for ScrapeSuite. Monitor, manage, and optimize your proxy infrastructure.",
-  keywords: ["ScrapeSuite", "Proxy Manager", "Dashboard", "Next.js", "TypeScript"],
-  authors: [{ name: "ScrapeSuite Team" }],
+  title: "ScrapeSuite — Scrape in Plain English",
+  description:
+    "Natural Language Scraping API + Template Marketplace. Type what you need. Get structured data.",
+  keywords: [
+    "web scraping",
+    "API",
+    "natural language",
+    "data extraction",
+    "ScrapeSuite",
+    "scraping API",
+    "template marketplace",
+  ],
+  authors: [{ name: "ScrapeSuite" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo.svg",
+  },
+  openGraph: {
+    title: "ScrapeSuite — Scrape in Plain English",
+    description:
+      "Natural Language Scraping API + Template Marketplace. Type what you need. Get structured data.",
+    url: "https://scrapesuite.com",
+    siteName: "ScrapeSuite",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ScrapeSuite — Scrape in Plain English",
+    description:
+      "Natural Language Scraping API + Template Marketplace. Type what you need. Get structured data.",
   },
 };
 
@@ -34,21 +56,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${sourceCodePro.variable} antialiased bg-background text-foreground`}
       >
-        <SidebarProvider>
-          <AppSidebar />
-          <SidebarInset>
-            <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
-              <div className="flex-1" />
-            </header>
-            <main className="flex-1 overflow-auto">
-              {children}
-            </main>
-          </SidebarInset>
-        </SidebarProvider>
+        {children}
         <Toaster />
       </body>
     </html>

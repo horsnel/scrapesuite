@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import {
   LayoutDashboard,
   Shield,
@@ -10,11 +10,14 @@ import {
   BarChart3,
   Settings,
   Globe,
+  CreditCard,
+  LogOut,
 } from "lucide-react"
 
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -29,7 +32,7 @@ import {
 const mainNavItems = [
   {
     title: "Dashboard",
-    href: "/",
+    href: "/console",
     icon: LayoutDashboard,
   },
   {
@@ -51,6 +54,11 @@ const mainNavItems = [
     title: "Analytics",
     href: "/analytics",
     icon: BarChart3,
+  },
+  {
+    title: "Account & Billing",
+    href: "/dashboard",
+    icon: CreditCard,
   },
 ]
 
@@ -79,12 +87,22 @@ const proxySubItems = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const isProxySection = pathname.startsWith("/proxy")
+
+  async function handleLogout() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" })
+    } finally {
+      router.refresh()
+      router.push("/")
+    }
+  }
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="px-4 py-3">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/console" className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <Shield className="h-4 w-4" />
           </div>
@@ -105,8 +123,8 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     asChild
                     isActive={
-                      item.href === "/"
-                        ? pathname === "/"
+                      item.href === "/dashboard"
+                        ? pathname === "/dashboard" || pathname.startsWith("/dashboard/")
                         : pathname.startsWith(item.href)
                     }
                     tooltip={item.title}
@@ -169,6 +187,20 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={handleLogout}
+              tooltip="Log out"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Log out</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

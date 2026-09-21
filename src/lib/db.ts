@@ -49,7 +49,6 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
 // Uses Prisma-compatible SQLite schema (DateTime stored as TEXT in ISO format)
 export async function initializeDatabase() {
   if (globalForPrisma.dbInitialized) return
-  globalForPrisma.dbInitialized = true
 
   try {
     // Create tables if they don't exist - matching Prisma's SQLite conventions
@@ -118,7 +117,9 @@ export async function initializeDatabase() {
 
     if (!adminUser) {
       console.log('[DB] Seeding admin user...')
-      const passwordHash = await bcrypt.hash('Scrape2026!', 12)
+      // Cost 10 keeps cold-start seeding fast on serverless (~100ms vs ~300ms
+      // for cost 12) while still being appropriate for the seeded demo account.
+      const passwordHash = await bcrypt.hash('Scrape2026!', 10)
 
       await db.user.create({
         data: {
@@ -137,8 +138,15 @@ export async function initializeDatabase() {
 
       console.log('[DB] Admin user seeded successfully')
     }
+
+    // Mark initialized only AFTER all DDL + seeding succeeded, so a failed
+    // init (e.g. transient SQLite lock on a cold instance) is retried on the
+    // next request instead of permanently bricking this lambda instance.
+    globalForPrisma.dbInitialized = true
   } catch (error) {
     console.error('[DB] Initialization error:', error)
+    // Allow retry on the next request - do not leave the flag set.
+    globalForPrisma.dbInitialized = false
     // Don't throw - subsequent queries might still work if tables exist from a previous cold start
   }
 }

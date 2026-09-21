@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -17,14 +17,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { getToken, removeToken, getCurrentUser } from "@/lib/auth-client";
-
-interface DashUser {
-  id: string;
-  email: string;
-  name: string | null;
-  plan: string;
-}
+import {
+  removeToken,
+  getCurrentUser,
+  decodeUserFromToken,
+  type SessionUser,
+} from "@/lib/auth-client";
 
 const navItems = [
   { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -42,52 +40,56 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<DashUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  /**
+   * NO blocking auth gate here. The edge middleware already verified the JWT
+   * before this page could be served, so we can render the shell instantly
+   * with the user decoded from the token client-side, then refresh in the
+   * background. The old full-screen "Loading..." gate waited on /api/auth/me
+   * (which triggered cold-start DB init) and redirected to /login on any
+   * failure - colliding with the middleware's authed-user bounce-back into
+   * /dashboard and producing an infinite loading loop.
+   */
+  const [user, setUser] = useState<SessionUser | null>(() =>
+    decodeUserFromToken()
+  );
   const [mobileOpen, setMobileOpen] = useState(false);
-  const authChecked = useRef(false);
 
   useEffect(() => {
-    if (authChecked.current) return;
-    authChecked.current = true;
+    let cancelled = false;
 
-    const checkAuth = async () => {
-      // Try to get current user via /api/auth/me which reads httpOnly cookie
-      const u = await getCurrentUser();
-      if (!u) {
-        // Also try client-side token as fallback
-        const token = getToken();
-        if (!token) {
-          router.push("/login");
-          return;
-        }
-        // If we have a client token but getCurrentUser failed, redirect
-        router.push("/login");
+    const refresh = async () => {
+      const result = await getCurrentUser();
+      if (cancelled) return;
+
+      if (result.status === "ok" && result.user) {
+        setUser(result.user);
         return;
       }
-      setUser(u);
-      setLoading(false);
+
+      // Redirect ONLY on a definitive 401 from the server. Network failures,
+      // timeouts and 5xx keep the session - the middleware has already
+      // verified the token, so bouncing to /login here would just ping-pong.
+      if (result.status === "unauthorized") {
+        removeToken();
+        router.push("/login");
+      }
     };
 
-    checkAuth();
+    refresh();
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // ignore - clearing the client cookie is enough
+    }
     removeToken();
     router.push("/");
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0b0f1a] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Zap className="w-8 h-8 text-amber-400 animate-pulse" />
-          <span className="text-slate-400 text-sm">Loading...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#0b0f1a] flex">
@@ -124,7 +126,7 @@ export default function DashboardLayout({
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-full bg-amber-500 text-black flex items-center justify-center font-bold text-xs">
               {user?.name?.[0]?.toUpperCase() ||
-                user?.email[0]?.toUpperCase() ||
+                user?.email?.[0]?.toUpperCase() ||
                 "U"}
             </div>
             <div className="flex-1 min-w-0">

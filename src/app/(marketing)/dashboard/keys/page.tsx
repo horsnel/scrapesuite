@@ -19,7 +19,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { getToken } from "@/lib/auth-client";
+import { getToken, fetchWithTimeout } from "@/lib/auth-client";
+import { ContentSkeleton } from "@/components/dashboard-skeletons";
 
 interface ApiKeyItem {
   id: string;
@@ -40,18 +41,11 @@ export default function KeysPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const fetchKeys = useCallback(async () => {
-    const token = getToken();
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
     try {
-      const res = await fetch("/api/keys", {
-        headers,
+      const res = await fetchWithTimeout("/api/keys", {
         credentials: "include",
       });
-      if (res.ok) {
+      if (res && res.ok) {
         const data = await res.json();
         setKeys(data.keys || []);
       }
@@ -124,11 +118,7 @@ export default function KeysPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
-      </div>
-    );
+    return <ContentSkeleton rows={3} />;
   }
 
   return (

@@ -10,7 +10,8 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getToken, getCurrentUser } from "@/lib/auth-client";
+import { getCurrentUser, fetchWithTimeout } from "@/lib/auth-client";
+import { DashboardSkeleton } from "@/components/dashboard-skeletons";
 
 interface DashUser {
   id: string;
@@ -38,23 +39,20 @@ export default function DashboardPage() {
     limit: 100,
   });
 
+  const [ready, setReady] = useState(false);
+
   const loadData = useCallback(async () => {
-    const token = getToken();
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
+    // /api/auth/me answers from the JWT alone - fast on any cold start.
+    const { status, user: u } = await getCurrentUser();
+    if (status === "ok" && u) setUser(u);
 
-    const u = await getCurrentUser();
-    if (u) setUser(u);
-
-    // Fetch scrape history
+    // Fetch scrape history with a hard timeout so a hung request can never
+    // leave the page blank; on failure the empty state simply stays.
     try {
-      const res = await fetch("/api/dashboard/history", {
-        headers,
+      const res = await fetchWithTimeout("/api/dashboard/history", {
         credentials: "include",
       });
-      if (res.ok) {
+      if (res && res.ok) {
         const data = await res.json();
         setRecentScrapes((data.history || []).slice(0, 5));
         setStats({
@@ -80,6 +78,8 @@ export default function DashboardPage() {
       }
     } catch {
       // Silently handle - dashboard API might not exist yet
+    } finally {
+      setReady(true);
     }
   }, []);
 
@@ -88,6 +88,12 @@ export default function DashboardPage() {
   }, [loadData]);
 
   const displayName = user?.name || user?.email?.split("@")[0] || "User";
+
+  if (!ready) {
+    // Branded skeleton instead of a spinner - matches the final layout so
+    // there is no jarring swap when the data arrives.
+    return <DashboardSkeleton />;
+  }
 
   const planLabel =
     user?.plan === "pro"

@@ -1,63 +1,28 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { verifyToken } from "@/lib/auth";
-import { ensureDbInit } from "@/lib/api-init";
+import { getAuthUser } from "@/lib/auth";
 
+/**
+ * Answers purely from the verified JWT — no database access at all.
+ *
+ * The token payload already carries id/email/name/plan, which is everything
+ * the dashboard needs. This keeps /api/auth/me instant even on Vercel cold
+ * starts (previously it triggered full SQLite init + seeding, which froze
+ * the dashboard behind a loading screen for many seconds and could fail on
+ * a fresh lambda instance, causing a /login <-> /dashboard redirect loop).
+ */
 export async function GET(request: Request) {
-  try {
-    await ensureDbInit();
-    let token: string | null = null;
+  const user = getAuthUser(request);
 
-    // Check Authorization header first
-    const authHeader = request.headers.get("authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      token = authHeader.substring(7);
-    }
-
-    // Check cookie as fallback
-    if (!token) {
-      const cookieHeader = request.headers.get("cookie");
-      if (cookieHeader) {
-        const cookies = Object.fromEntries(
-          cookieHeader.split("; ").map((c) => {
-            const [k, ...v] = c.split("=");
-            return [k, v.join("=")];
-          })
-        );
-        token = cookies["scrapesuite_token"] || null;
-      }
-    }
-
-    if (!token) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const decoded = verifyToken(token);
-    if (!decoded || typeof decoded !== "object" || !("id" in decoded)) {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-    }
-
-    const user = await db.user.findUnique({
-      where: { id: (decoded as { id: string }).id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        plan: true,
-        createdAt: true,
-      },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    return NextResponse.json({ user });
-  } catch (error) {
-    console.error("Me error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  return NextResponse.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name ?? null,
+      plan: user.plan ?? "free",
+    },
+  });
 }

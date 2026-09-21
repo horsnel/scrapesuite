@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { History, Eye, Clock, Loader2 } from "lucide-react";
+import { History, Eye, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getToken } from "@/lib/auth-client";
+import { fetchWithTimeout } from "@/lib/auth-client";
+import { ContentSkeleton } from "@/components/dashboard-skeletons";
 
 interface ScrapeRecord {
   id: string;
@@ -40,18 +41,11 @@ export default function HistoryPage() {
   const [selectedUrl, setSelectedUrl] = useState<string>("");
 
   const fetchHistory = useCallback(async () => {
-    const token = getToken();
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-
     try {
-      const res = await fetch("/api/dashboard/history", {
-        headers,
+      const res = await fetchWithTimeout("/api/dashboard/history", {
         credentials: "include",
       });
-      if (res.ok) {
+      if (res && res.ok) {
         const data = await res.json();
         setHistory(data.history || []);
       }
@@ -67,11 +61,7 @@ export default function HistoryPage() {
   }, [fetchHistory]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-6 h-6 text-amber-400 animate-spin" />
-      </div>
-    );
+    return <ContentSkeleton rows={5} />;
   }
 
   return (

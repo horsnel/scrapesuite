@@ -3,11 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Zap, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Zap, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { setToken } from "@/lib/auth-client";
+import { setToken, fetchWithTimeout } from "@/lib/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,11 +23,22 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      // Timeout + single retry handles Vercel cold starts gracefully;
+      // the button label updates so the wait never looks like a freeze.
+      const res = await fetchWithTimeout(
+        "/api/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        },
+        15000
+      );
+
+      if (!res) {
+        setError("The server took too long to respond. Please try again.");
+        return;
+      }
 
       const data = await res.json();
 
@@ -123,7 +134,10 @@ export default function LoginPage() {
               className="w-full bg-amber-500 hover:bg-amber-600 text-black font-semibold h-11"
             >
               {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <>
+                  <span className="h-4 w-4 rounded-full border-2 border-black/20 border-t-black animate-spin" />
+                  Signing in...
+                </>
               ) : (
                 "Sign In"
               )}

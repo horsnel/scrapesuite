@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { BarChart3 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getToken, getCurrentUser } from "@/lib/auth-client";
+import { getCurrentUser, fetchWithTimeout } from "@/lib/auth-client";
 import {
   BarChart,
   Bar,
@@ -27,21 +27,14 @@ export default function UsagePage() {
 
   useEffect(() => {
     const loadUsage = async () => {
-      const u = await getCurrentUser();
-      if (u) setPlan(u.plan);
-
-      const token = getToken();
-      const headers: Record<string, string> = {};
-      if (token) {
-        headers["Authorization"] = `Bearer ${token}`;
-      }
+      const { status, user: u } = await getCurrentUser();
+      if (status === "ok" && u) setPlan(u.plan);
 
       try {
-        const res = await fetch("/api/dashboard/history", {
-          headers,
+        const res = await fetchWithTimeout("/api/dashboard/history", {
           credentials: "include",
         });
-        if (res.ok) {
+        if (res && res.ok) {
           const data = await res.json();
           const history = data.history || [];
           setTotalCalls(history.length);

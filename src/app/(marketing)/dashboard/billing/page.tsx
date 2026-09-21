@@ -64,14 +64,13 @@ const plans = [
 
 export default function BillingPage() {
   const [user, setUser] = useState<DashUser | null>(null);
-  const [loading, setLoading] = useState(true);
   const [upgrading, setUpgrading] = useState<string | null>(null);
 
   useEffect(() => {
     const loadUser = async () => {
-      const u = await getCurrentUser();
-      if (u) setUser(u);
-      setLoading(false);
+      // Plan info hydrates in the background; the page renders instantly.
+      const { status, user: u } = await getCurrentUser();
+      if (status === "ok" && u) setUser(u);
     };
     loadUser();
   }, []);
@@ -118,14 +117,6 @@ export default function BillingPage() {
       setUpgrading(null);
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Zap className="w-6 h-6 text-amber-400 animate-pulse" />
-      </div>
-    );
-  }
 
   return (
     <div className="p-6 lg:p-8 max-w-5xl mx-auto">

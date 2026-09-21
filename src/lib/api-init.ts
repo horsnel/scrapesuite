@@ -1,12 +1,22 @@
 import { initializeDatabase } from '@/lib/db'
 
-// Ensures database is initialized before handling API requests
-// Call this at the start of every API route handler
+// Ensures database is initialized before handling API routes.
+// The promise is cached per lambda instance; on failure it is cleared so the
+// next request retries (a transient cold-start error must not permanently
+// brick the instance).
 let initPromise: Promise<void> | null = null
 
-export async function ensureDbInit() {
+export async function ensureDbInit(): Promise<void> {
   if (!initPromise) {
-    initPromise = initializeDatabase()
+    initPromise = initializeDatabase().catch((error) => {
+      initPromise = null
+      throw error
+    })
   }
-  return initPromise
+  try {
+    await initPromise
+  } catch {
+    // initializeDatabase already logs and swallows its own errors; reaching
+    // here means something unexpected - continue so callers can proceed.
+  }
 }

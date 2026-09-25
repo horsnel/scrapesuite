@@ -613,3 +613,156 @@ export const creditConsumption = [
   { category: "Premium Geo-Targeting", credits: 22000, percentage: 3.4 },
   { category: "Sticky Sessions", credits: 10000, percentage: 1.6 },
 ];
+
+export type JobStatus = "running" | "queued" | "completed" | "failed" | "paused";
+export type JobSchedule = "manual" | "hourly" | "daily" | "weekly";
+
+export interface ScrapeJob {
+  id: string;
+  name: string;
+  targetUrl: string;
+  template: string;
+  status: JobStatus;
+  schedule: JobSchedule;
+  lastRun: string;
+  nextRun: string | null;
+  pagesScraped: number;
+  records: number;
+  durationSec: number;
+  successRate: number;
+}
+
+export const mockJobs: ScrapeJob[] = [
+  {
+    id: "job_8f3a21",
+    name: "Amazon Price Monitor",
+    targetUrl: "amazon.com/dp/B08N5WRWNW",
+    template: "e-commerce-pricing",
+    status: "running",
+    schedule: "hourly",
+    lastRun: "2026-09-25T08:00:00Z",
+    nextRun: "2026-09-25T09:00:00Z",
+    pagesScraped: 4820,
+    records: 96400,
+    durationSec: 312,
+    successRate: 99.2,
+  },
+  {
+    id: "job_2c9e77",
+    name: "Walmart Category Crawl",
+    targetUrl: "walmart.com/browse/electronics",
+    template: "e-commerce-pricing",
+    status: "completed",
+    schedule: "daily",
+    lastRun: "2026-09-25T06:30:00Z",
+    nextRun: "2026-09-26T06:30:00Z",
+    pagesScraped: 1284,
+    records: 19260,
+    durationSec: 186,
+    successRate: 97.8,
+  },
+  {
+    id: "job_b41d05",
+    name: "Real Estate Listings — Austin",
+    targetUrl: "zillow.com/austin-tx/rentals",
+    template: "real-estate-listings",
+    status: "running",
+    schedule: "daily",
+    lastRun: "2026-09-25T07:15:00Z",
+    nextRun: "2026-09-26T07:15:00Z",
+    pagesScraped: 892,
+    records: 12488,
+    durationSec: 244,
+    successRate: 98.1,
+  },
+  {
+    id: "job_77aa19",
+    name: "Job Postings Aggregator",
+    targetUrl: "indeed.com/jobs?q=software+engineer",
+    template: "job-postings",
+    status: "queued",
+    schedule: "weekly",
+    lastRun: "2026-09-22T04:00:00Z",
+    nextRun: "2026-09-29T04:00:00Z",
+    pagesScraped: 0,
+    records: 0,
+    durationSec: 0,
+    successRate: 0,
+  },
+  {
+    id: "job_5e60cc",
+    name: "News Sentiment Feed",
+    targetUrl: "news.ycombinator.com/front",
+    template: "custom-prompt",
+    status: "running",
+    schedule: "hourly",
+    lastRun: "2026-09-25T08:30:00Z",
+    nextRun: "2026-09-25T09:30:00Z",
+    pagesScraped: 315,
+    records: 15750,
+    durationSec: 95,
+    successRate: 99.6,
+  },
+  {
+    id: "job_a19f83",
+    name: "Competitor SEO Audit",
+    targetUrl: "semrush.com/siteaudit/*",
+    template: "seo-metrics",
+    status: "failed",
+    schedule: "daily",
+    lastRun: "2026-09-25T05:45:00Z",
+    nextRun: "2026-09-26T05:45:00Z",
+    pagesScraped: 203,
+    records: 1015,
+    durationSec: 61,
+    successRate: 41.3,
+  },
+  {
+    id: "job_d2b840",
+    name: "Etsy Seller Analytics",
+    targetUrl: "etsy.com/shop/analytics",
+    template: "e-commerce-pricing",
+    status: "paused",
+    schedule: "manual",
+    lastRun: "2026-09-18T11:20:00Z",
+    nextRun: null,
+    pagesScraped: 156,
+    records: 3120,
+    durationSec: 78,
+    successRate: 96.4,
+  },
+  {
+    id: "job_09c1ee",
+    name: "AliExpress Reviews Sweep",
+    targetUrl: "aliexpress.com/item/*.html",
+    template: "product-reviews",
+    status: "completed",
+    schedule: "daily",
+    lastRun: "2026-09-25T03:10:00Z",
+    nextRun: "2026-09-26T03:10:00Z",
+    pagesScraped: 2140,
+    records: 64200,
+    durationSec: 402,
+    successRate: 95.9,
+  },
+];
+
+export const jobsOverview = {
+  active: 3,
+  queued: 1,
+  completedToday: 2,
+  failed: 1,
+  totalRecords: 214733,
+  avgSuccessRate: 96.9,
+};
+
+export const jobsOverTime = [
+  { time: "00:00", jobs: 12, records: 3400 },
+  { time: "03:00", jobs: 8, records: 2100 },
+  { time: "06:00", jobs: 19, records: 8200 },
+  { time: "09:00", jobs: 26, records: 12400 },
+  { time: "12:00", jobs: 22, records: 10600 },
+  { time: "15:00", jobs: 28, records: 13900 },
+  { time: "18:00", jobs: 17, records: 7300 },
+  { time: "21:00", jobs: 14, records: 5100 },
+];

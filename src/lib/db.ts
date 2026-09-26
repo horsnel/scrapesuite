@@ -8,6 +8,10 @@ function generateApiKey(): string {
   return `ss_live_${bytes}`
 }
 
+/** Seeded demo account — override via AUTH_EMAIL / AUTH_PASSWORD env vars. */
+const ADMIN_EMAIL = process.env.AUTH_EMAIL ?? 'admin@scrapesuite.com'
+const ADMIN_PASSWORD = process.env.AUTH_PASSWORD ?? 'Scrape2026!'
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
   dbInitialized: boolean | undefined
@@ -113,17 +117,17 @@ export async function initializeDatabase() {
     console.log('[DB] Tables verified/created')
 
     // Seed admin user if not exists
-    const adminUser = await db.user.findUnique({ where: { email: 'admin@scrapesuite.com' } })
+    const adminUser = await db.user.findUnique({ where: { email: ADMIN_EMAIL } })
 
     if (!adminUser) {
       console.log('[DB] Seeding admin user...')
       // Cost 10 keeps cold-start seeding fast on serverless (~100ms vs ~300ms
       // for cost 12) while still being appropriate for the seeded demo account.
-      const passwordHash = await bcrypt.hash('Scrape2026!', 10)
+      const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10)
 
       await db.user.create({
         data: {
-          email: 'admin@scrapesuite.com',
+          email: ADMIN_EMAIL,
           name: 'Admin',
           passwordHash,
           plan: 'free',

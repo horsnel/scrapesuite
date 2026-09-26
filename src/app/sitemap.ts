@@ -1,56 +1,35 @@
-import { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://scrapesuite.vercel.app";
+
+type Entry = {
+  path: string;
+  priority: number;
+  changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"];
+};
+
+const PUBLIC_PAGES: Entry[] = [
+  { path: "/", priority: 1, changeFrequency: "weekly" },
+  { path: "/templates", priority: 0.9, changeFrequency: "weekly" },
+  { path: "/docs", priority: 0.8, changeFrequency: "weekly" },
+  { path: "/blog", priority: 0.7, changeFrequency: "weekly" },
+  { path: "/about", priority: 0.5, changeFrequency: "monthly" },
+  { path: "/careers", priority: 0.5, changeFrequency: "monthly" },
+  { path: "/changelog", priority: 0.5, changeFrequency: "weekly" },
+  { path: "/contact", priority: 0.5, changeFrequency: "monthly" },
+  { path: "/privacy", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/security", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/terms", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/login", priority: 0.4, changeFrequency: "monthly" },
+  { path: "/signup", priority: 0.4, changeFrequency: "monthly" },
+];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://scrapesuite.com";
-
-  return [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/login`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/signup`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
-    },
-    {
-      url: `${baseUrl}/dashboard`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/dashboard/keys`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/dashboard/usage`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/dashboard/history`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.7,
-    },
-    {
-      url: `${baseUrl}/dashboard/billing`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
-  ];
+  const lastModified = new Date();
+  return PUBLIC_PAGES.map(({ path, priority, changeFrequency }) => ({
+    url: `${SITE_URL}${path}`,
+    lastModified,
+    changeFrequency,
+    priority,
+  }));
 }

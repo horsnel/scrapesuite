@@ -131,12 +131,19 @@ void main() {
 
 const BLOB_COUNT = 12
 
+// WebGL metaball background is disabled by default: the original design shipped
+// without `three` installed, so this effect never ran in production and the
+// approved visual identity is the clean, canvas-free hero. Set
+// NEXT_PUBLIC_ENABLE_WEBGL=true to opt in at build time.
+const ENABLE_WEBGL = process.env.NEXT_PUBLIC_ENABLE_WEBGL === 'true'
+
 export default function MetaballCanvas() {
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
+    if (!ENABLE_WEBGL) return
 
     let cancelled = false
     let cleanupFn: (() => void) | undefined

@@ -28,8 +28,8 @@ export default function Navigation() {
   useEffect(() => {
     const token = getToken();
     if (token) {
-      getCurrentUser().then((u) => {
-        if (u) setUser(u);
+      getCurrentUser().then((res) => {
+        if (res.status === "ok" && res.user) setUser(res.user);
       });
     }
   }, []);
